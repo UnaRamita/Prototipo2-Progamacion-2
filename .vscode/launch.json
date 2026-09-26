@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug LOVE2D (F5)",
+            "type": "lua",
+            "request": "launch",
+            "luaVersion": "luajit",
+            "runtimeExecutable": "D:\\LOVE\\lovec.exe",
+            "runtimeArgs": ["${workspaceFolder}"],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        }
+    ]
+}

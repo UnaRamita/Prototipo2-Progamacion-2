@@ -75,9 +75,28 @@ function Assets.load()
     Assets.images.cornerDL = img("Assets/dungeon/downleftcorner.png")
     Assets.images.cornerDR = img("Assets/dungeon/downRIgthcorner.png")
 
+    -- HUD: corazones (3 estados) y estamina (3 segmentos, cada uno lleno/vacio).
+    -- Assets/Hud ya traia estos sprites preparados; no se dibujo nada nuevo.
+    Assets.images.heartFull = img("Assets/Hud/full.png")
+    Assets.images.heartHalf = img("Assets/Hud/half.png")
+    Assets.images.heartEmpty = img("Assets/Hud/empty.png")
+
+    Assets.images.staminaL = img("Assets/Hud/L stamina.png")
+    Assets.images.staminaM = img("Assets/Hud/M stamina.png")
+    Assets.images.staminaR = img("Assets/Hud/R stamina.png")
+    Assets.images.staminaLEmpty = img("Assets/Hud/L empty stamina.png")
+    Assets.images.staminaMEmpty = img("Assets/Hud/M empty stamina.png")
+    Assets.images.staminaREmpty = img("Assets/Hud/R empty stamina.png")
+
     -- Sonidos (golpes del jugador, reutilizados de forma razonable)
     Assets.sounds.hit = love.audio.newSource("Assets/sounds/hit.mp3", "static")
     Assets.sounds.miss = love.audio.newSource("Assets/sounds/misshit.mp3", "static")
+
+    -- No hay un sonido de curacion en el proyecto (solo hit.mp3/misshit.mp3,
+    -- ambos de combate). Assets.sounds.heal queda sin asignar (nil) a
+    -- proposito: src/systems/audio_system.lua ya esta preparado para
+    -- reproducirlo apenas exista el recurso (ver README, seccion de
+    -- limitaciones) -- no se inventa una ruta a un archivo que no existe.
 end
 
 -- Reproduce un sonido permitiendo solapamiento (clona la fuente) para que

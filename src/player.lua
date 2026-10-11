@@ -11,6 +11,7 @@ local Combat = require("src.combat")
 local Constants = require("src.constants")
 local StateMachine = require("src.systems.state_machine")
 local Timer = require("lib.hump.timer")
+local Events = require("src.systems.events")
 
 local Player = {}
 Player.__index = Player
@@ -137,6 +138,11 @@ function Player.new(assets, x, y)
     self.maxHp = Constants.PLAYER_MAX_HP
     self.hp = self.maxHp
 
+    self.maxStamina = Constants.PLAYER_MAX_STAMINA
+    self.stamina = self.maxStamina
+    self.staminaRegenElapsed = 0 -- segundos acumulados desde la ultima unidad recuperada
+    self.healFlashTimer = 0 -- parpadeo breve al recuperar vida (ver Player:heal/Player:draw)
+
     self.facing = "down"   -- "up" | "down" | "left" | "right" (para el hitbox de ataque)
     self.flipX = false     -- solo se actualiza con movimiento horizontal (sprites miran a la derecha)
 
@@ -167,12 +173,47 @@ function Player.new(assets, x, y)
     })
     self.machine:cambiar("idle")
 
+    -- Estado inicial para quien escuche (el HUD): sin esto, los corazones/
+    -- segmentos de estamina quedarian en blanco hasta el primer cambio.
+    Events:emit(Events.PLAYER_HEALTH_CHANGED, self.hp, self.maxHp)
+    Events:emit(Events.PLAYER_STAMINA_CHANGED, self.stamina, self.maxStamina)
+
     return self
 end
 
 function Player:tryAttack()
     if self.machine:es("dead") or self.machine:es("attack") then return end
+    self:consumeStamina(Constants.STAMINA_COST_ATTACK)
     self.machine:cambiar("attack")
+end
+
+-- No bloquea el ataque si no hay estamina (ver nota en constants.lua):
+-- simplemente no deja que baje de 0. El gasto es lo que dispara el evento
+-- que actualiza los 3 segmentos del HUD.
+function Player:consumeStamina(amount)
+    local newStamina = math.max(0, self.stamina - amount)
+    if newStamina == self.stamina then return end
+    self.stamina = newStamina
+    self.staminaRegenElapsed = 0
+    Events:emit(Events.PLAYER_STAMINA_CHANGED, self.stamina, self.maxStamina)
+end
+
+-- Recupera vida sin superar el maximo (ver HeartPickup). Si el jugador ya
+-- estaba al maximo, "applied" da 0: igual se deja recoger el objeto (no se
+-- bloquea la recoleccion), pero no se emite PLAYER_HEALED ni se reproduce
+-- sonido/parpadeo de curacion, porque en los hechos no se curo nada.
+function Player:heal(amount)
+    local before = self.hp
+    self.hp = math.min(self.maxHp, self.hp + amount)
+    local applied = self.hp - before
+
+    Events:emit(Events.PLAYER_HEALTH_CHANGED, self.hp, self.maxHp)
+    if applied > 0 then
+        self.healFlashTimer = 0.5
+        Events:emit(Events.PLAYER_HEALED, applied)
+    end
+
+    return applied
 end
 
 function Player:isAttackHitActive()
@@ -203,8 +244,15 @@ end
 function Player:takeDamage(amount, fromX, fromY)
     if self.machine:es("dead") or self.invulnerable then return end
 
+    local before = self.hp
     self.hp = math.max(0, self.hp - amount)
+    local applied = before - self.hp
     self.hurtFlashTimer = 0.5
+
+    Events:emit(Events.PLAYER_HEALTH_CHANGED, self.hp, self.maxHp)
+    if applied > 0 then
+        Events:emit(Events.PLAYER_DAMAGED, applied)
+    end
 
     self.invulnerable = true
     self.timer:after(Constants.PLAYER_HURT_INVULN_TIME, function()
@@ -232,6 +280,19 @@ function Player:update(dt, solids)
 
     self.timer:update(dt)
     if self.hurtFlashTimer > 0 then self.hurtFlashTimer = self.hurtFlashTimer - dt end
+    if self.healFlashTimer > 0 then self.healFlashTimer = self.healFlashTimer - dt end
+
+    -- Regeneracion pasiva de estamina: una unidad cada STAMINA_REGEN_INTERVAL
+    -- segundos sin gastar (consumeStamina reinicia este contador). No regenera
+    -- muerto, por prolijidad (el combate ya no importa en ese momento).
+    if self.stamina < self.maxStamina and not self.machine:es("dead") then
+        self.staminaRegenElapsed = self.staminaRegenElapsed + dt
+        if self.staminaRegenElapsed >= Constants.STAMINA_REGEN_INTERVAL then
+            self.staminaRegenElapsed = self.staminaRegenElapsed - Constants.STAMINA_REGEN_INTERVAL
+            self.stamina = math.min(self.maxStamina, self.stamina + 1)
+            Events:emit(Events.PLAYER_STAMINA_CHANGED, self.stamina, self.maxStamina)
+        end
+    end
 
     -- El empujon al recibir daño se resuelve aca, no en cada estado, porque
     -- aplica sin importar que este haciendo el jugador (salvo ya estar muerto).
@@ -245,9 +306,13 @@ end
 
 function Player:draw()
     local r, g, b = 1, 1, 1
-    -- parpadeo rojo mientras esta invulnerable/lastimado
+    -- parpadeo rojo mientras esta invulnerable/lastimado; parpadeo
+    -- verdoso breve al recuperar vida (respuesta visual de PLAYER_HEALED,
+    -- ver Player:heal). El de daño tiene prioridad si coincidieran.
     if self.hurtFlashTimer > 0 and math.floor(self.hurtFlashTimer * 14) % 2 == 0 then
         r, g, b = 1, 0.35, 0.35
+    elseif self.healFlashTimer > 0 and math.floor(self.healFlashTimer * 14) % 2 == 0 then
+        r, g, b = 0.5, 1.6, 0.6
     end
     self.currentAnim:draw(self.x, self.y, self.flipX, self.scale, r, g, b, 1)
 end

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="29" height="12" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="21">
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="29" height="12" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="22">
  <tileset firstgid="1" name="Dungeon_Tileset" tilewidth="16" tileheight="16" tilecount="100" columns="10">
   <image source="../dungeon/Dungeon_Tileset.png" width="160" height="160"/>
   <tile id="0"><properties><property name="collidable" type="bool" value="true"/></properties></tile>
@@ -83,6 +83,9 @@
    <point/>
   </object>
   <object id="12" name="" type="key_spawn" x="328" y="112">
+   <point/>
+  </object>
+  <object id="21" name="" type="heal_spawn" x="440" y="160">
    <point/>
   </object>
   <object id="13" name="" type="candle" x="40" y="48">

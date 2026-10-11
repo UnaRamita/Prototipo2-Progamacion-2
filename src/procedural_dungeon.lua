@@ -264,6 +264,11 @@ function ProceduralDungeon.generate()
     local cx, cy = roomCenter(lastRoom)
     addObject("chest", cx, cy, {})
     addObject("key_spawn", cx, cy - 1, {})
+    -- heal_spawn: punto fijo para el corazon de recuperacion, al OTRO lado
+    -- del cofre que key_spawn (para no superponerse entre si). Valido para
+    -- cualquier sala de al menos 3 tiles de alto (ROOM_MIN_H), igual que
+    -- key_spawn ya asumia.
+    addObject("heal_spawn", cx, cy + 1, {})
 
     for i = 2, #rooms - 1 do
         local qx, qy = roomCenter(rooms[i])

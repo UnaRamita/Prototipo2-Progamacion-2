@@ -36,6 +36,7 @@ Dungeon.candlesRoom1 = {}
 Dungeon.candlesRoom2 = {}
 Dungeon.chestPos = nil
 Dungeon.keySpawnPos = nil
+Dungeon.healSpawnPos = nil -- punto fijo junto a la salida para el corazon de recuperacion (ver Events.ROOM_COMPLETED)
 Dungeon.room2DarknessRect = nil
 
 -- Texturas de pared orientadas para el nivel procedural (lista de
@@ -91,6 +92,7 @@ local function loadObjects(layer)
     Dungeon.playerSpawn = nil
     Dungeon.chestPos = nil
     Dungeon.keySpawnPos = nil
+    Dungeon.healSpawnPos = nil
     Dungeon.doorRect = nil
     Dungeon.enemySpawnsRoom1 = {}
     Dungeon.enemySpawnsRoom2 = {}
@@ -114,6 +116,8 @@ local function loadObjects(layer)
             Dungeon.chestPos = { x = wx, y = wy }
         elseif obj.type == "key_spawn" then
             Dungeon.keySpawnPos = { x = wx, y = wy }
+        elseif obj.type == "heal_spawn" then
+            Dungeon.healSpawnPos = { x = wx, y = wy }
         elseif obj.type == "door" then
             local ww, wh = obj.width * SCALE, obj.height * SCALE
             Dungeon.doorRect = rect(wx, wy, ww, wh)

@@ -15,6 +15,7 @@ local Constants = require("src.constants")
 local Dungeon = require("src.dungeon")
 local Key = require("src.key")
 local UI = require("src.ui")
+local Events = require("src.systems.events")
 
 local GameplayState = {}
 
@@ -38,6 +39,7 @@ function GameplayState.drawWorld(game)
     drawables[#drawables + 1] = game.player
     drawables[#drawables + 1] = game.chest
     if game.key then drawables[#drawables + 1] = game.key end
+    if game.healthPickup then drawables[#drawables + 1] = game.healthPickup end
     table.sort(drawables, function(a, b) return a.y < b.y end)
     for _, d in ipairs(drawables) do d:draw() end
 
@@ -51,6 +53,8 @@ function GameplayState.drawWorld(game)
         UI.drawPrompt("Presiona F para abrir", d.x + d.w / 2, d.y + d.h / 2)
     elseif game.key and game.key:shouldShowPrompt(game.player) then
         UI.drawPrompt("Presiona F para recoger", game.key.x, game.key.y - 40)
+    elseif game.healthPickup and game.healthPickup:shouldShowPrompt(game.player) then
+        UI.drawPrompt("Presiona F para recuperar vida", game.healthPickup.x, game.healthPickup.y - 40)
     elseif game.chest:shouldShowPrompt(game.player) then
         UI.drawPrompt("Presiona F para abrir", game.chest.x, game.chest.y - 60)
     end
@@ -127,9 +131,14 @@ function GameplayState.new(game)
         game.resolveCombat()
 
         -- La llave solo aparece cuando TODOS los enemigos de ambas salas murieron.
+        -- Ese mismo instante ES "la sala se completo": se emite ROOM_COMPLETED
+        -- aca (no se duplica la deteccion en otro lado). El corazon de
+        -- recuperacion lo genera quien escucha ese evento (Game.lua), no
+        -- este estado -- GameplayState no necesita saber nada de corazones.
         if not game.keySpawned and game.allEnemiesDead() then
             game.keySpawned = true
             game.key = Key.new(Dungeon.keySpawnPos.x, Dungeon.keySpawnPos.y, Assets.images.key, Constants.KEY_SCALE)
+            Events:emit(Events.ROOM_COMPLETED)
         end
     end
 
@@ -149,6 +158,13 @@ function GameplayState.new(game)
                 game.key:collect()
                 game.hasKey = true
                 game.showMessage("¡Llave obtenida!", 2.5)
+            elseif game.healthPickup and game.healthPickup:canInteract(game.player) then
+                local healed = game.healthPickup:collect(game.player)
+                if healed > 0 then
+                    game.showMessage("¡Vida recuperada!", 2)
+                else
+                    game.showMessage("Ya tenías la vida al máximo", 2)
+                end
             elseif game.chest:canInteract(game.player) then
                 if game.chest:tryOpen(game.hasKey) then
                     if game.hasNextLevel() then

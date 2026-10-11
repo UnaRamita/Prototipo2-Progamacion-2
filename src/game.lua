@@ -14,7 +14,10 @@ local Door = require("src.door")
 local Player = require("src.player")
 local Enemy = require("src.enemy")
 local Chest = require("src.chest")
+local HeartPickup = require("src.heart_pickup")
 local StateMachine = require("src.systems.state_machine")
+local Events = require("src.systems.events")
+require("src.systems.audio_system") -- se suscribe solo al cargarse; no se usa su valor de retorno
 local Camera = require("lib.hump.camera")
 local Timer = require("lib.hump.timer")
 
@@ -35,6 +38,8 @@ Game.chest = nil
 Game.key = nil          -- nil hasta que se derrota a todos los enemigos
 Game.keySpawned = false
 Game.hasKey = false
+Game.healthPickup = nil -- nil hasta que se completa la sala (ver ROOM_COMPLETED)
+Game.healSpawned = false
 Game.message = nil      -- { text = ... } feedback transitorio (llave/cofre); lo limpia Game.timer
 
 Game.timer = Timer.new()  -- eventos temporales de gameplay (ver Game.showMessage)
@@ -58,6 +63,8 @@ function Game.setupEntities()
     Game.key = nil
     Game.keySpawned = false
     Game.hasKey = false
+    Game.healthPickup = nil
+    Game.healSpawned = false
     Game.message = nil
     Game.timer:clear()
 
@@ -71,6 +78,23 @@ function Game.setupEntities()
         table.insert(Game.enemies, enemy)
     end
 end
+
+-- "RewardSystem": lo unico que hace es escuchar ROOM_COMPLETED y generar
+-- el corazon de recuperacion junto a la salida. Vive ahi, no en
+-- GameplayState, porque GameplayState no necesita saber nada de corazones
+-- ni de Dungeon.healSpawnPos -- solo le avisa a quien escuche que la sala
+-- se completo (ver GameplayState:actualizar). Se suscribe una sola vez, al
+-- cargarse este modulo (no hay riesgo de duplicar la suscripcion ni de
+-- dejarla colgada: Game.lua se require() una unica vez y vive toda la
+-- partida, a diferencia de Player/Enemy que se recrean por nivel).
+Events:on(Events.ROOM_COMPLETED, function()
+    if Game.healSpawned then return end
+    Game.healSpawned = true
+    Game.healthPickup = HeartPickup.new(
+        Dungeon.healSpawnPos.x, Dungeon.healSpawnPos.y,
+        Assets.images.heartFull, Constants.HEART_PICKUP_SCALE
+    )
+end)
 
 -- Carga el mapa correspondiente al nivel (1: fijo via Tiled, 2+: generado
 -- proceduralmente) y arma las entidades sobre el. La llama
@@ -148,13 +172,15 @@ function Game.resolveCombat()
         Assets.playSound(Assets.sounds.miss)
     end
 
-    -- Ataques de los enemigos contra el jugador
+    -- Ataques de los enemigos contra el jugador. El sonido de golpe ya NO
+    -- se reproduce aca: lo dispara src/systems/audio_system.lua, escuchando
+    -- PLAYER_DAMAGED (emitido desde Player:takeDamage SOLO cuando el daño
+    -- realmente se aplica -- no si el jugador estaba invulnerable).
     for _, enemy in ipairs(Game.enemies) do
         if enemy:isAttackHitActive() then
             if Combat.aabbOverlap(enemy:getAttackHitbox(), Combat.colliderRect(player)) then
                 player:takeDamage(Constants.ENEMY_ATTACK_DAMAGE, enemy.x, enemy.y)
                 enemy:registerHitOnPlayer()
-                Assets.playSound(Assets.sounds.hit)
             end
         end
     end

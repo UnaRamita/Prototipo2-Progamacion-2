@@ -9,7 +9,7 @@
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 4,
-  nextobjectid = 21,
+  nextobjectid = 22,
   properties = {},
   tilesets = {
     {
@@ -91,6 +91,7 @@
         { id = 10, name = "", type = "enemy_spawn", shape = "point", x = 376, y = 96, width = 0, height = 0, rotation = 0, visible = true, properties = { ["room"] = 2 } },
         { id = 11, name = "", type = "chest", shape = "point", x = 424, y = 160, width = 0, height = 0, rotation = 0, visible = true, properties = {  } },
         { id = 12, name = "", type = "key_spawn", shape = "point", x = 328, y = 112, width = 0, height = 0, rotation = 0, visible = true, properties = {  } },
+        { id = 21, name = "", type = "heal_spawn", shape = "point", x = 440, y = 160, width = 0, height = 0, rotation = 0, visible = true, properties = {  } },
         { id = 13, name = "", type = "candle", shape = "point", x = 40, y = 48, width = 0, height = 0, rotation = 0, visible = true, properties = { ["room"] = 1 } },
         { id = 14, name = "", type = "candle", shape = "point", x = 184, y = 160, width = 0, height = 0, rotation = 0, visible = true, properties = { ["room"] = 1 } },
         { id = 15, name = "", type = "candle", shape = "point", x = 248, y = 48, width = 0, height = 0, rotation = 0, visible = true, properties = { ["room"] = 2 } },

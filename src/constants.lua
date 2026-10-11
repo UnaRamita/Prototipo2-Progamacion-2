@@ -30,6 +30,22 @@ Constants.PLAYER_ATTACK_HIT_START = 0.16 -- segundos desde que arranca el swing 
 Constants.PLAYER_ATTACK_HIT_END = 0.30
 Constants.PLAYER_HURT_INVULN_TIME = 0.7
 
+-- Estamina: 3 unidades (una por segmento del HUD, ver src/ui.lua). Se gasta
+-- al atacar y se regenera sola con el tiempo; a proposito NO bloquea el
+-- ataque si llega a 0 -- agregar esa restriccion cambiaria el combate ya
+-- balanceado, y la consigna de este TP pide integrar eventos/HUD, no
+-- rediseñar el combate. Queda documentado como decision de diseño (ver
+-- Player:consumeStamina en src/player.lua y el README).
+Constants.PLAYER_MAX_STAMINA = 3
+Constants.STAMINA_COST_ATTACK = 1
+Constants.STAMINA_REGEN_INTERVAL = 1.8 -- segundos para recuperar 1 unidad sin atacar
+
+-- Corazon de recuperacion (aparece al completar una sala, ver ROOM_COMPLETED
+-- en src/systems/events.lua). Un "corazon" en el HUD representa maxHp/3, asi
+-- que recuperar "una unidad de vida" es eso mismo.
+Constants.HEART_PICKUP_HEAL = Constants.PLAYER_MAX_HP / 3
+Constants.HEART_PICKUP_SCALE = 2.5 -- el sprite (Assets/Hud/full.png) es de 16x16, chico
+
 -- ===== Enemigo (Blood Monster) =====
 Constants.ENEMY_MAX_HP = 45
 Constants.ENEMY_SPEED = 85
@@ -46,5 +62,12 @@ Constants.ENEMY_ATTACK_HIT_END = 0.42
 Constants.ENEMY_HURT_TIME = 0.25
 Constants.ENEMY_FLICKER_TIME = 0.5 -- titileo corto despues de terminar la animacion de muerte, antes de desaparecer
 Constants.ENEMY_LOSE_INTEREST_RANGE = 340 -- si el jugador se aleja demasiado, vuelve a IDLE
+
+-- ===== HUD (corazones + estamina, ver src/ui.lua) =====
+-- Los sprites de Assets/Hud son chicos (corazones 16x16, estamina 32x32);
+-- se escalan para que se lean bien en la esquina superior izquierda sin
+-- competir con el resto de la interfaz (barra de vida numerica anterior).
+Constants.HUD_HEART_SCALE = 3
+Constants.HUD_STAMINA_SCALE = 1.5
 
 return Constants
